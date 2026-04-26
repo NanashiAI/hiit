@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HIIT TIMER</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --work-color: #ff4757;
+            --rest-color: #2ed573;
+            --text-color: #ffffff;
+        }
+        * { box-sizing: border-box; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px 16px 0;
+            transition: background-color 0.5s ease;
+        }
+        .status { font-size: 2rem; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
+        .timer { font-size: 8rem; font-weight: 900; line-height: 1; margin-bottom: 20px; }
+        .info { font-size: 1.5rem; margin-bottom: 30px; color: #ccc; }
+        .controls { display: flex; gap: 15px; margin-bottom: 32px; }
+        button {
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.95); }
+        #startBtn { background-color: var(--text-color); color: var(--bg-color); }
+        #resetBtn { background-color: #555; color: white; }
+        .work-mode { background-color: var(--work-color); }
+        .rest-mode { background-color: var(--rest-color); }
+
+        /* ── 広告エリア ── */
+        .ad-area {
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        /* ── OFUSEエリア ── */
+        .support-area {
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+            padding: 16px;
+            margin-bottom: 24px;
+            border-top: 1px solid rgba(255,255,255,0.15);
+        }
+        .support-area p {
+            font-size: 13px;
+            color: rgba(255,255,255,0.5);
+            margin: 0 0 10px;
+        }
+        .ofuse-btn {
+            display: inline-block;
+            background: #7B61FF;
+            color: #fff;
+            font-weight: 700;
+            font-size: 14px;
+            padding: 10px 24px;
+            border-radius: 24px;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        .ofuse-btn:hover { opacity: 0.85; }
+    </style>
+</head>
+<body>
+
+    <div id="status" class="status">READY</div>
+    <div id="timer" class="timer">20</div>
+    <div id="info" class="info">SET: 1 / 8</div>
+
+    <div class="controls">
+        <button id="startBtn" onclick="toggleTimer()">START</button>
+        <button id="resetBtn" onclick="resetTimer()">RESET</button>
+    </div>
+
+    <!-- 広告エリア -->
+    <div class="ad-area">
+        <!-- admax -->
+        <script src="https://adm.shinobi.jp/s/479f1c6ac4146536aadc2779b0130bc2"></script>
+        <!-- admax -->
+    </div>
+
+    <!-- OFUSEエリア -->
+    <div class="support-area">
+        <p>このツールが役に立ったら支援していただけると励みになります 🙏</p>
+        <a href="https://ofuse.me/4af7da02" target="_blank" rel="noopener noreferrer" class="ofuse-btn">
+            💌 OFUSEで支援する
+        </a>
+    </div>
+
+    <script>
+        let countdown;
+        let isRunning = false;
+        let currentSet = 1;
+        let isWork = true;
+        let timeLeft = 20;
+        let wakeLock = null;
+
+        const statusEl = document.getElementById('status');
+        const timerEl  = document.getElementById('timer');
+        const infoEl   = document.getElementById('info');
+        const startBtn = document.getElementById('startBtn');
+        const bodyEl   = document.body;
+
+        // ── Wake Lock ──
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    // タブが非表示→再表示されたとき自動で再取得
+                    wakeLock.addEventListener('release', () => {
+                        if (isRunning) requestWakeLock();
+                    });
+                }
+            } catch (err) {
+                console.log(`WakeLock error: ${err.name}, ${err.message}`);
+            }
+        }
+
+        function releaseWakeLock() {
+            if (wakeLock !== null) {
+                wakeLock.release();
+                wakeLock = null;
+            }
+        }
+
+        // ページが再びアクティブになったとき実行中なら再取得
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && isRunning) {
+                requestWakeLock();
+            }
+        });
+
+        // ── 表示更新 ──
+        function updateDisplay() {
+            timerEl.textContent = timeLeft;
+            infoEl.textContent  = `SET: ${currentSet} / 8`;
+            if (!isRunning && statusEl.textContent === 'READY') return;
+            if (isWork) {
+                statusEl.textContent = 'WORK (PUSH!)';
+                bodyEl.className = 'work-mode';
+            } else {
+                statusEl.textContent = 'REST (BREATHE)';
+                bodyEl.className = 'rest-mode';
+            }
+        }
+
+        // ── START / PAUSE / RESUME ──
+        async function toggleTimer() {
+            if (isRunning) {
+                clearInterval(countdown);
+                releaseWakeLock();
+                startBtn.textContent = 'RESUME';
+                isRunning = false;
+            } else {
+                await requestWakeLock();
+                isRunning = true;
+                startBtn.textContent = 'PAUSE';
+                startBtn.style.backgroundColor = '#444';
+                startBtn.style.color = 'white';
+
+                countdown = setInterval(() => {
+                    timeLeft--;
+                    if (timeLeft < 0) switchPhase();
+                    updateDisplay();
+                }, 1000);
+            }
+        }
+
+        // ── フェーズ切り替え ──
+        function switchPhase() {
+            if (isWork) {
+                isWork = false;
+                timeLeft = 10;
+            } else {
+                isWork = true;
+                timeLeft = 20;
+                currentSet++;
+            }
+
+            if (currentSet > 8) {
+                clearInterval(countdown);
+                releaseWakeLock();
+                alert('FINISH! お疲れ様でした！');
+                resetTimer();
+            } else {
+                window.navigator.vibrate?.(200);
+            }
+        }
+
+        // ── リセット ──
+        function resetTimer() {
+            clearInterval(countdown);
+            releaseWakeLock();
+            isRunning = false;
+            currentSet = 1;
+            isWork = true;
+            timeLeft = 20;
+            statusEl.textContent = 'READY';
+            startBtn.textContent = 'START';
+            startBtn.style.backgroundColor = '';
+            startBtn.style.color = '';
+            bodyEl.className = '';
+            updateDisplay();
+        }
+
+        updateDisplay();
+    </script>
+</body>
+</html>
