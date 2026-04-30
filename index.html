@@ -12,15 +12,15 @@
 
   gtag('config', 'G-NLD8XYL5YC');
 </script>
-    <title>HIIT TIMER</title>
+    <title>HIIT PRO CUSTOM</title>
     <style>
         :root {
             --bg-color: #1a1a1a;
             --work-color: #ff4757;
             --rest-color: #2ed573;
             --text-color: #ffffff;
+            --progress-bg: #333;
         }
-        * { box-sizing: border-box; }
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
@@ -29,29 +29,66 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
+            height: 100vh;
             margin: 0;
-            padding: 20px 16px 0;
+            overflow: hidden;
             transition: background-color 0.5s ease;
         }
-        .status { font-size: 2rem; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
-        .timer { font-size: 8rem; font-weight: 900; line-height: 1; margin-bottom: 20px; }
-        .info { font-size: 1.5rem; margin-bottom: 30px; color: #ccc; }
-        .controls { display: flex; gap: 15px; margin-bottom: 32px; }
+        #progressBarContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background-color: var(--progress-bg);
+            z-index: 100;
+        }
+        #progressBar {
+            width: 0%;
+            height: 100%;
+            background-color: var(--text-color);
+            transition: width 0.3s linear;
+        }
+        .status { font-size: 2rem; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; z-index: 10; }
+        .timer { font-size: 8rem; font-weight: 900; line-height: 1; margin-bottom: 20px; z-index: 10; }
+        .info { font-size: 1.5rem; margin-bottom: 30px; color: #ccc; z-index: 10; }
+        .controls { display: flex; flex-direction: column; align-items: center; gap: 15px; z-index: 10; }
+        .btn-group { display: flex; gap: 15px; }
         button {
-            padding: 15px 40px;
-            font-size: 1.2rem;
+            padding: 15px 35px;
+            font-size: 1rem;
             font-weight: bold;
             border: none;
             border-radius: 50px;
             cursor: pointer;
-            transition: transform 0.1s;
+            transition: all 0.2s;
         }
         button:active { transform: scale(0.95); }
         #startBtn { background-color: var(--text-color); color: var(--bg-color); }
         #resetBtn { background-color: #555; color: white; }
+        
+        .option-group { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px; max-width: 90%; }
+        .toggle-btn {
+            background-color: transparent;
+            color: #777;
+            border: 2px solid #444;
+            padding: 8px 15px;
+            font-size: 0.8rem;
+        }
+        .toggle-btn.active {
+            border-color: var(--text-color);
+            color: var(--text-color);
+            background-color: rgba(255,255,255,0.1);
+        }
         .work-mode { background-color: var(--work-color); }
         .rest-mode { background-color: var(--rest-color); }
+        /* バイブレーション非対応環境用メッセージ */
+        #vibeSupportMsg {
+            font-size: 0.7rem;
+            color: #ff6b6b;
+            margin-top: 5px;
+            display: none;
+        }
 
         /* ── 広告エリア ── */
         .ad-area {
@@ -91,13 +128,25 @@
 </head>
 <body>
 
+    <div id="progressBarContainer">
+        <div id="progressBar"></div>
+    </div>
+
     <div id="status" class="status">READY</div>
     <div id="timer" class="timer">20</div>
     <div id="info" class="info">SET: 1 / 8</div>
 
     <div class="controls">
-        <button id="startBtn" onclick="toggleTimer()">START</button>
-        <button id="resetBtn" onclick="resetTimer()">RESET</button>
+        <div class="btn-group">
+            <button id="startBtn" onclick="toggleTimer()">START</button>
+            <button id="resetBtn" onclick="resetTimer()">RESET</button>
+        </div>
+        <div class="option-group">
+            <button id="audioBtn" class="toggle-btn" onclick="toggleAudio()">SOUND: OFF</button>
+            <button id="vibeBtn" class="toggle-btn" onclick="toggleVibe()">VIBE: OFF</button>
+            <button id="skipLastRestBtn" class="toggle-btn" onclick="toggleSkipLastRest()">LAST REST: ON</button>
+        </div>
+        <div id="vibeSupportMsg">※Vibration API is not supported in this browser.</div>
     </div>
 
     <!-- 広告エリア -->
@@ -109,10 +158,9 @@
 
     <!-- OFUSEエリア -->
     <div class="support-area">
-        <p>このツールが役に立ったら支援していただけると励みになります 🙏</p>
-        <a href="https://ofuse.me/4af7da02" target="_blank" rel="noopener noreferrer" class="ofuse-btn">
-            💌 OFUSEで支援する
-        </a>
+        <p style="font-size: 14px; margin-top: 20px;">
+            このツールが便利だったら☕<a href="https://ofuse.me/4af7da02">コーヒー1杯分の支援</a>お願いします
+        </p>
     </div>
 
     <script>
@@ -122,52 +170,97 @@
         let isWork = true;
         let timeLeft = 20;
         let wakeLock = null;
+        let isAudioEnabled = false;
+        let isVibeEnabled = false;
+        let skipLastRest = false;
 
         const statusEl = document.getElementById('status');
-        const timerEl  = document.getElementById('timer');
-        const infoEl   = document.getElementById('info');
+        const timerEl = document.getElementById('timer');
+        const infoEl = document.getElementById('info');
         const startBtn = document.getElementById('startBtn');
-        const bodyEl   = document.body;
+        const audioBtn = document.getElementById('audioBtn');
+        const vibeBtn = document.getElementById('vibeBtn');
+        const skipBtn = document.getElementById('skipLastRestBtn');
+        const progressBar = document.getElementById('progressBar');
+        const bodyEl = document.body;
+        const vibeMsgEl = document.getElementById('vibeSupportMsg');
 
-        // ── Wake Lock ──
-        async function requestWakeLock() {
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                    // タブが非表示→再表示されたとき自動で再取得
-                    wakeLock.addEventListener('release', () => {
-                        if (isRunning) requestWakeLock();
-                    });
-                }
-            } catch (err) {
-                console.log(`WakeLock error: ${err.name}, ${err.message}`);
+        // バイブレーション対応確認
+        const isVibeSupported = 'vibrate' in navigator;
+        if (!isVibeSupported) {
+            vibeBtn.style.display = 'none'; // ボタンを隠す
+            vibeMsgEl.style.display = 'block'; // メッセージを表示
+        }
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playBeep(frequency, duration) {
+            if (!isAudioEnabled) return;
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'square';
+            oscillator.frequency.value = frequency;
+            gainNode.gain.setTargetAtTime(0.1, audioCtx.currentTime, 0.02);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        function doVibrate(pattern) {
+            if (!isVibeEnabled || !isVibeSupported) return;
+            navigator.vibrate(pattern);
+        }
+
+        function toggleAudio() {
+            isAudioEnabled = !isAudioEnabled;
+            audioBtn.textContent = isAudioEnabled ? 'SOUND: ON' : 'SOUND: OFF';
+            audioBtn.classList.toggle('active', isAudioEnabled);
+            if (isAudioEnabled && audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function toggleVibe() {
+            if (!isVibeSupported) return;
+            isVibeEnabled = !isVibeEnabled;
+            vibeBtn.textContent = isVibeEnabled ? 'VIBE: ON' : 'VIBE: OFF';
+            vibeBtn.classList.toggle('active', isVibeEnabled);
+            if (isVibeEnabled) {
+                // テスト振動
+                doVibrate(200);
             }
+        }
+
+        function toggleSkipLastRest() {
+            skipLastRest = !skipLastRest;
+            skipBtn.textContent = skipLastRest ? 'LAST REST: SKIP' : 'LAST REST: ON';
+            skipBtn.classList.toggle('active', skipLastRest);
+        }
+
+        async function requestWakeLock() {
+            try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } 
+            catch (err) {}
         }
 
         function releaseWakeLock() {
-            if (wakeLock !== null) {
-                wakeLock.release();
-                wakeLock = null;
-            }
+            if (wakeLock !== null) { wakeLock.release(); wakeLock = null; }
         }
 
-        // ページが再びアクティブになったとき実行中なら再取得
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible' && isRunning) {
-                requestWakeLock();
-            }
-        });
-
-        // ── 表示更新 ──
         function updateDisplay() {
             timerEl.textContent = timeLeft;
-            infoEl.textContent  = `SET: ${currentSet} / 8`;
+            infoEl.textContent = `SET: ${currentSet} / 8`;
+            
+            // 全体時間を計算（最後の休憩を飛ばすかどうかで分母を変える）
+            const totalDuration = skipLastRest ? 230 : 240;
+            const totalElapsed = ((currentSet - 1) * 30) + (isWork ? (20 - timeLeft) : (20 + (10 - timeLeft)));
+            const progressPercent = Math.min((totalElapsed / totalDuration) * 100, 100);
+            progressBar.style.width = `${progressPercent}%`;
+
             if (!isRunning && statusEl.textContent === 'READY') return;
+
             if (isWork) {
-                statusEl.textContent = 'WORK (PUSH!)';
+                statusEl.textContent = "WORK";
                 bodyEl.className = 'work-mode';
             } else {
-                statusEl.textContent = 'REST (BREATHE)';
+                statusEl.textContent = "REST";
                 bodyEl.className = 'rest-mode';
             }
         }
@@ -183,9 +276,6 @@
                 await requestWakeLock();
                 isRunning = true;
                 startBtn.textContent = 'PAUSE';
-                startBtn.style.backgroundColor = '#444';
-                startBtn.style.color = 'white';
-
                 countdown = setInterval(() => {
                     timeLeft--;
                     if (timeLeft < 0) switchPhase();
@@ -197,25 +287,40 @@
         // ── フェーズ切り替え ──
         function switchPhase() {
             if (isWork) {
+                // 最終セットのワーク終了判定
+                if (currentSet === 8 && skipLastRest) {
+                    finish();
+                    return;
+                }
                 isWork = false;
                 timeLeft = 10;
+                playBeep(440, 0.5);
+                // レスト開始: 短く1回
+                doVibrate(300); 
             } else {
+                if (currentSet === 8) {
+                    finish();
+                    return;
+                }
                 isWork = true;
                 timeLeft = 20;
                 currentSet++;
-            }
-
-            if (currentSet > 8) {
-                clearInterval(countdown);
-                releaseWakeLock();
-                alert('FINISH! お疲れ様でした！');
-                resetTimer();
-            } else {
-                window.navigator.vibrate?.(200);
+                playBeep(880, 0.5);
+                // ワーク開始: 短く2回
+                doVibrate([200, 100, 200]); 
             }
         }
 
-        // ── リセット ──
+        function finish() {
+            clearInterval(countdown);
+            releaseWakeLock();
+            progressBar.style.width = '100%';
+            playBeep(1320, 1.0);
+            // 終了: 長めに
+            doVibrate([500, 200, 500]); 
+            setTimeout(() => { alert("COMPLETE!"); resetTimer(); }, 100);
+        }
+
         function resetTimer() {
             clearInterval(countdown);
             releaseWakeLock();
@@ -225,9 +330,8 @@
             timeLeft = 20;
             statusEl.textContent = 'READY';
             startBtn.textContent = 'START';
-            startBtn.style.backgroundColor = '';
-            startBtn.style.color = '';
             bodyEl.className = '';
+            progressBar.style.width = '0%';
             updateDisplay();
         }
 
