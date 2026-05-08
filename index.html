@@ -20,6 +20,7 @@
             --rest-color: #2ed573;
             --text-color: #ffffff;
             --progress-bg: #333;
+            --modal-bg: #2a2a2a;
         }
         body {
             background-color: var(--bg-color);
@@ -36,101 +37,69 @@
         }
         #progressBarContainer {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 8px;
+            top: 0; left: 0; width: 100%; height: 8px;
             background-color: var(--progress-bg);
             z-index: 100;
         }
         #progressBar {
-            width: 0%;
-            height: 100%;
+            width: 0%; height: 100%;
             background-color: var(--text-color);
             transition: width 0.3s linear;
         }
-        .status { font-size: 2rem; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; z-index: 10; }
-        .timer { font-size: 8rem; font-weight: 900; line-height: 1; margin-bottom: 20px; z-index: 10; }
-        .info { font-size: 1.5rem; margin-bottom: 30px; color: #ccc; z-index: 10; }
-        .controls { display: flex; flex-direction: column; align-items: center; gap: 15px; z-index: 10; }
+        .status { font-size: 2rem; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
+        .timer { font-size: 8rem; font-weight: 900; line-height: 1; margin-bottom: 20px; }
+        .info { font-size: 1.5rem; margin-bottom: 30px; color: #ccc; }
+        .controls { display: flex; flex-direction: column; align-items: center; gap: 15px; }
         .btn-group { display: flex; gap: 15px; }
         button {
-            padding: 15px 35px;
-            font-size: 1rem;
-            font-weight: bold;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.2s;
+            padding: 15px 35px; font-size: 1rem; font-weight: bold;
+            border: none; border-radius: 50px; cursor: pointer; transition: all 0.2s;
         }
         button:active { transform: scale(0.95); }
         #startBtn { background-color: var(--text-color); color: var(--bg-color); }
         #resetBtn { background-color: #555; color: white; }
         
-        .option-group { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px; max-width: 90%; }
+        .option-group { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px; }
         .toggle-btn {
-            background-color: transparent;
-            color: #777;
-            border: 2px solid #444;
-            padding: 8px 15px;
-            font-size: 0.8rem;
+            background-color: transparent; color: #777; border: 2px solid #444;
+            padding: 8px 15px; font-size: 0.8rem;
         }
-        .toggle-btn.active {
-            border-color: var(--text-color);
-            color: var(--text-color);
-            background-color: rgba(255,255,255,0.1);
-        }
+        .toggle-btn.active { border-color: var(--text-color); color: var(--text-color); background-color: rgba(255,255,255,0.1); }
         .work-mode { background-color: var(--work-color); }
         .rest-mode { background-color: var(--rest-color); }
-        /* バイブレーション非対応環境用メッセージ */
-        #vibeSupportMsg {
-            font-size: 0.7rem;
-            color: #ff6b6b;
-            margin-top: 5px;
-            display: none;
-        }
 
-        /* ── 広告エリア ── */
-        .ad-area {
-            width: 100%;
-            max-width: 480px;
-            text-align: center;
-            margin-bottom: 16px;
+        /* カスタムダイアログ */
+        #modalOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.85);
+            display: none; justify-content: center; align-items: center; z-index: 200;
         }
+        #modalContent {
+            background-color: var(--modal-bg);
+            padding: 30px; border-radius: 20px; text-align: center;
+            width: 80%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .modal-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; color: var(--rest-color); }
+        .modal-body { font-size: 1rem; margin-bottom: 25px; color: #ddd; }
+        .modal-actions { display: flex; flex-direction: column; gap: 12px; }
+        .modal-btn {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            padding: 12px; border-radius: 10px; font-weight: bold; text-decoration: none;
+        }
+        .x-btn { background-color: #000; color: white; border: 1px solid #555; }
+        .ofuse-btn { background-color: #ffde59; color: #333; }
+        .close-btn { background-color: transparent; color: #888; font-size: 0.9rem; margin-top: 10px; border: none; cursor: pointer; }
 
-        /* ── OFUSEエリア ── */
-        .support-area {
-            width: 100%;
-            max-width: 480px;
-            text-align: center;
-            padding: 16px;
-            margin-bottom: 24px;
-            border-top: 1px solid rgba(255,255,255,0.15);
+        .footer {
+            position: fixed; bottom: 20px; left: 0; width: 100%;
+            display: flex; justify-content: center; z-index: 5;
         }
-        .support-area p {
-            font-size: 13px;
-            color: rgba(255,255,255,0.5);
-            margin: 0 0 10px;
-        }
-        .ofuse-btn {
-            display: inline-block;
-            background: #7B61FF;
-            color: #fff;
-            font-weight: 700;
-            font-size: 14px;
-            padding: 10px 24px;
-            border-radius: 24px;
-            text-decoration: none;
-            transition: opacity 0.2s;
-        }
-        .ofuse-btn:hover { opacity: 0.85; }
+        .footer-link { color: rgba(255, 255, 255, 0.3); text-decoration: none; font-size: 0.7rem; }
     </style>
 </head>
 <body>
 
-    <div id="progressBarContainer">
-        <div id="progressBar"></div>
-    </div>
+    <div id="progressBarContainer"><div id="progressBar"></div></div>
 
     <div id="status" class="status">READY</div>
     <div id="timer" class="timer">20</div>
@@ -143,198 +112,115 @@
         </div>
         <div class="option-group">
             <button id="audioBtn" class="toggle-btn" onclick="toggleAudio()">SOUND: OFF</button>
-            <button id="vibeBtn" class="toggle-btn" onclick="toggleVibe()">VIBE: OFF</button>
             <button id="skipLastRestBtn" class="toggle-btn" onclick="toggleSkipLastRest()">LAST REST: ON</button>
         </div>
-        <div id="vibeSupportMsg">※Vibration API is not supported in this browser.</div>
     </div>
 
-    <!-- 広告エリア -->
-    <div class="ad-area">
-        <!-- admax -->
-        <script src="https://adm.shinobi.jp/s/479f1c6ac4146536aadc2779b0130bc2"></script>
-        <!-- admax -->
+    <div id="modalOverlay">
+        <div id="modalContent">
+            <div class="modal-title">COMPLETE!</div>
+            <div class="modal-body">お疲れ様でした！<br>今日のトレーニングを記録しましょう。</div>
+            <div class="modal-actions">
+                <a id="modalXBtn" href="#" target="_blank" class="modal-btn x-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
+                    Share on 𝕏
+                </a>
+                <a href="https://ofuse.me/4af7da02" target="_blank" class="modal-btn ofuse-btn">☕ OFUSE</a>
+                <button class="close-btn" onclick="closeModal()">CLOSE</button>
+            </div>
+        </div>
     </div>
 
-    <!-- OFUSEエリア -->
-    <div class="support-area">
-        <p style="font-size: 14px; margin-top: 20px;">
-            このツールが便利だったら☕<a href="https://ofuse.me/4af7da02">コーヒー1杯分の支援</a>お願いします
-        </p>
-    </div>
+    <footer class="footer">
+        <!-- OFUSEエリア -->
+        <a href="https://ofuse.me/4af7da02" target="_blank" class="footer-link">Support this project (OFUSE)</a>
+    </footer>
 
     <script>
-        let countdown;
-        let isRunning = false;
-        let currentSet = 1;
-        let isWork = true;
-        let timeLeft = 20;
-        let wakeLock = null;
-        let isAudioEnabled = false;
-        let isVibeEnabled = false;
-        let skipLastRest = false;
+        let countdown, isRunning = false, currentSet = 1, isWork = true, timeLeft = 20;
+        let wakeLock = null, isAudioEnabled = false, skipLastRest = false;
 
-        const statusEl = document.getElementById('status');
-        const timerEl = document.getElementById('timer');
-        const infoEl = document.getElementById('info');
-        const startBtn = document.getElementById('startBtn');
-        const audioBtn = document.getElementById('audioBtn');
-        const vibeBtn = document.getElementById('vibeBtn');
-        const skipBtn = document.getElementById('skipLastRestBtn');
-        const progressBar = document.getElementById('progressBar');
-        const bodyEl = document.body;
-        const vibeMsgEl = document.getElementById('vibeSupportMsg');
-
-        // バイブレーション対応確認
-        const isVibeSupported = 'vibrate' in navigator;
-        if (!isVibeSupported) {
-            vibeBtn.style.display = 'none'; // ボタンを隠す
-            vibeMsgEl.style.display = 'block'; // メッセージを表示
-        }
+        const statusEl = document.getElementById('status'), timerEl = document.getElementById('timer');
+        const infoEl = document.getElementById('info'), startBtn = document.getElementById('startBtn');
+        const progressBar = document.getElementById('progressBar'), bodyEl = document.body;
+        const modal = document.getElementById('modalOverlay');
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playBeep(frequency, duration) {
+        function playBeep(freq, dur) {
             if (!isAudioEnabled) return;
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            oscillator.type = 'square';
-            oscillator.frequency.value = frequency;
-            gainNode.gain.setTargetAtTime(0.1, audioCtx.currentTime, 0.02);
-            oscillator.start();
-            oscillator.stop(audioCtx.currentTime + duration);
-        }
-
-        function doVibrate(pattern) {
-            if (!isVibeEnabled || !isVibeSupported) return;
-            navigator.vibrate(pattern);
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'square'; osc.frequency.value = freq;
+            gain.gain.setTargetAtTime(0.1, audioCtx.currentTime, 0.02);
+            osc.start(); osc.stop(audioCtx.currentTime + dur);
         }
 
         function toggleAudio() {
             isAudioEnabled = !isAudioEnabled;
-            audioBtn.textContent = isAudioEnabled ? 'SOUND: ON' : 'SOUND: OFF';
-            audioBtn.classList.toggle('active', isAudioEnabled);
+            document.getElementById('audioBtn').textContent = isAudioEnabled ? 'SOUND: ON' : 'SOUND: OFF';
+            document.getElementById('audioBtn').classList.toggle('active', isAudioEnabled);
             if (isAudioEnabled && audioCtx.state === 'suspended') audioCtx.resume();
-        }
-
-        function toggleVibe() {
-            if (!isVibeSupported) return;
-            isVibeEnabled = !isVibeEnabled;
-            vibeBtn.textContent = isVibeEnabled ? 'VIBE: ON' : 'VIBE: OFF';
-            vibeBtn.classList.toggle('active', isVibeEnabled);
-            if (isVibeEnabled) {
-                // テスト振動
-                doVibrate(200);
-            }
         }
 
         function toggleSkipLastRest() {
             skipLastRest = !skipLastRest;
-            skipBtn.textContent = skipLastRest ? 'LAST REST: SKIP' : 'LAST REST: ON';
-            skipBtn.classList.toggle('active', skipLastRest);
+            document.getElementById('skipLastRestBtn').textContent = skipLastRest ? 'LAST REST: SKIP' : 'LAST REST: ON';
+            document.getElementById('skipLastRestBtn').classList.toggle('active', skipLastRest);
         }
 
-        async function requestWakeLock() {
-            try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } 
-            catch (err) {}
-        }
-
-        function releaseWakeLock() {
-            if (wakeLock !== null) { wakeLock.release(); wakeLock = null; }
-        }
+        async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
+        function releaseWakeLock() { if (wakeLock) { wakeLock.release(); wakeLock = null; } }
 
         function updateDisplay() {
             timerEl.textContent = timeLeft;
             infoEl.textContent = `SET: ${currentSet} / 8`;
-            
-            // 全体時間を計算（最後の休憩を飛ばすかどうかで分母を変える）
-            const totalDuration = skipLastRest ? 230 : 240;
-            const totalElapsed = ((currentSet - 1) * 30) + (isWork ? (20 - timeLeft) : (20 + (10 - timeLeft)));
-            const progressPercent = Math.min((totalElapsed / totalDuration) * 100, 100);
-            progressBar.style.width = `${progressPercent}%`;
-
-            if (!isRunning && statusEl.textContent === 'READY') return;
-
-            if (isWork) {
-                statusEl.textContent = "WORK";
-                bodyEl.className = 'work-mode';
-            } else {
-                statusEl.textContent = "REST";
-                bodyEl.className = 'rest-mode';
+            const total = skipLastRest ? 230 : 240;
+            const elapsed = ((currentSet - 1) * 30) + (isWork ? (20 - timeLeft) : (20 + (10 - timeLeft)));
+            progressBar.style.width = `${Math.min((elapsed / total) * 100, 100)}%`;
+            if (isRunning || statusEl.textContent !== 'READY') {
+                statusEl.textContent = isWork ? "WORK" : "REST";
+                bodyEl.className = isWork ? 'work-mode' : 'rest-mode';
             }
         }
 
-        // ── START / PAUSE / RESUME ──
-        async function toggleTimer() {
+        function toggleTimer() {
             if (isRunning) {
-                clearInterval(countdown);
-                releaseWakeLock();
-                startBtn.textContent = 'RESUME';
-                isRunning = false;
+                clearInterval(countdown); releaseWakeLock();
+                startBtn.textContent = 'RESUME'; isRunning = false;
             } else {
-                await requestWakeLock();
-                isRunning = true;
-                startBtn.textContent = 'PAUSE';
-                countdown = setInterval(() => {
-                    timeLeft--;
-                    if (timeLeft < 0) switchPhase();
-                    updateDisplay();
-                }, 1000);
+                requestWakeLock(); isRunning = true; startBtn.textContent = 'PAUSE';
+                countdown = setInterval(() => { timeLeft--; if (timeLeft < 0) switchPhase(); updateDisplay(); }, 1000);
             }
         }
 
-        // ── フェーズ切り替え ──
         function switchPhase() {
             if (isWork) {
-                // 最終セットのワーク終了判定
-                if (currentSet === 8 && skipLastRest) {
-                    finish();
-                    return;
-                }
-                isWork = false;
-                timeLeft = 10;
-                playBeep(440, 0.5);
-                // レスト開始: 短く1回
-                doVibrate(300); 
+                if (currentSet === 8 && skipLastRest) { finish(); return; }
+                isWork = false; timeLeft = 10; playBeep(440, 0.5);
             } else {
-                if (currentSet === 8) {
-                    finish();
-                    return;
-                }
-                isWork = true;
-                timeLeft = 20;
-                currentSet++;
-                playBeep(880, 0.5);
-                // ワーク開始: 短く2回
-                doVibrate([200, 100, 200]); 
+                if (currentSet === 8) { finish(); return; }
+                isWork = true; timeLeft = 20; currentSet++; playBeep(880, 0.5);
             }
         }
 
         function finish() {
-            clearInterval(countdown);
-            releaseWakeLock();
-            progressBar.style.width = '100%';
+            clearInterval(countdown); releaseWakeLock();
             playBeep(1320, 1.0);
-            // 終了: 長めに
-            doVibrate([500, 200, 500]); 
-            setTimeout(() => { alert("COMPLETE!"); resetTimer(); }, 100);
+            const shareText = encodeURIComponent("4分間のHIIT完了！🔥 #HIIT #Workout");
+            document.getElementById('modalXBtn').href = `https://twitter.com/intent/tweet?text=${shareText}`;
+            modal.style.display = 'flex';
         }
+
+        function closeModal() { modal.style.display = 'none'; resetTimer(); }
 
         function resetTimer() {
-            clearInterval(countdown);
-            releaseWakeLock();
-            isRunning = false;
-            currentSet = 1;
-            isWork = true;
-            timeLeft = 20;
-            statusEl.textContent = 'READY';
-            startBtn.textContent = 'START';
-            bodyEl.className = '';
-            progressBar.style.width = '0%';
+            clearInterval(countdown); releaseWakeLock();
+            isRunning = false; currentSet = 1; isWork = true; timeLeft = 20;
+            statusEl.textContent = 'READY'; startBtn.textContent = 'START';
+            bodyEl.className = ''; progressBar.style.width = '0%';
             updateDisplay();
         }
-
         updateDisplay();
     </script>
 </body>
